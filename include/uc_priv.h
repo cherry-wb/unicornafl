@@ -150,6 +150,31 @@ static inline bool _hook_exists_bounded(struct list_item *cur, uint64_t addr)
 //relloc increment, KEEP THIS A POWER OF 2!
 #define MEM_BLOCK_INCR 32
 
+struct cmp_header {
+
+  //unsigned hits : 16;
+  unsigned ins_type : 8;
+  unsigned addr : 32;
+
+  unsigned shape : 8;
+  unsigned is_IMM : 8;
+
+} __attribute__((packed));
+
+struct cmp_operands {
+
+  uint64_t v0;
+  uint64_t v1;
+
+};
+
+struct cmp_map {
+
+  struct cmp_header   header;
+  struct cmp_operands log;
+
+};
+
 struct uc_struct {
     uc_arch arch;
     uc_mode mode;
@@ -264,6 +289,16 @@ struct uc_struct {
     unsigned int afl_inst_rms; 
     size_t exit_count; // number of exits set in afl_fuzz or afl_forkserver
     uint64_t *exits; // pointer to the actual exits
+    //MAP_SIZE
+    uint64_t       __MAP_SIZE;
+    //basic block trace
+    uint64_t       *__afl_trace_record_ptr;
+    uint64_t       __afl_trace_record_counter;
+    uint64_t       __afl_trace_record_max;
+    //cmp log
+    struct cmp_map *__afl_cmp_map;
+    uint64_t       __afl_cmp_record_counter;
+    uint64_t       __afl_cmp_record_max;
 #endif
 };
 

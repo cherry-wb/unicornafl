@@ -30,11 +30,12 @@
 
  */
 
-static inline void gen_afl_maybe_log(TCGContext *tcg_ctx, uint64_t cur_loc) {
+static inline void gen_afl_maybe_log(TCGContext *tcg_ctx, uint64_t cur_loc, uint64_t real_loc) {
 
   TCGv_ptr tuc = tcg_const_ptr(tcg_ctx, tcg_ctx->uc);
   TCGv_i64 tcur_loc = tcg_const_i64(tcg_ctx, cur_loc);
-  gen_helper_afl_maybe_log(tcg_ctx, tuc, tcur_loc);
+  TCGv_i64 treal_loc = tcg_const_i64(tcg_ctx, real_loc);
+  gen_helper_afl_maybe_log(tcg_ctx, tuc, tcur_loc, treal_loc);
 
 }
 
@@ -65,3 +66,38 @@ static inline void gen_afl_compcov_log_64(TCGContext *tcg_ctx, uint64_t cur_loc,
 
 }
 
+static inline void gen_afl_cmplog_8(TCGContext *tcg_ctx, uint64_t cur_addr,
+                                          TCGv_i32 arg1, TCGv_i32 arg2, TCGv_i32 is_imm) {
+
+  TCGv_ptr tuc = tcg_const_ptr(tcg_ctx, tcg_ctx->uc);
+  TCGv_i64 tcur_addr = tcg_const_i64(tcg_ctx, cur_addr);
+  gen_helper_afl_cmplog_8(tcg_ctx, tuc, tcur_addr, arg1, arg2, is_imm);
+
+}
+
+static inline void gen_afl_cmplog_16(TCGContext *tcg_ctx, uint64_t cur_addr,
+                                          TCGv_i32 arg1, TCGv_i32 arg2, TCGv_i32 is_imm) {
+
+  TCGv_ptr tuc = tcg_const_ptr(tcg_ctx, tcg_ctx->uc);
+  TCGv_i64 tcur_addr = tcg_const_i64(tcg_ctx, cur_addr);
+  gen_helper_afl_cmplog_16(tcg_ctx, tuc, tcur_addr, arg1, arg2, is_imm);
+
+}
+
+static inline void gen_afl_cmplog_32(TCGContext *tcg_ctx, uint64_t cur_addr,
+                                          TCGv_i32 arg1, TCGv_i32 arg2, TCGv_i32 is_imm) {
+
+  TCGv_ptr tuc = tcg_const_ptr(tcg_ctx, tcg_ctx->uc);
+  TCGv_i64 tcur_addr = tcg_const_i64(tcg_ctx, cur_addr);
+  gen_helper_afl_cmplog_32(tcg_ctx, tuc, tcur_addr, arg1, arg2, is_imm);
+
+}
+
+static inline void gen_afl_cmplog_64(TCGContext *tcg_ctx, uint64_t cur_addr,
+                                          TCGv_i64 arg1, TCGv_i64 arg2, TCGv_i32 is_imm) {
+
+  TCGv_ptr tuc = tcg_const_ptr(tcg_ctx, tcg_ctx->uc);
+  TCGv_i64 tcur_addr = tcg_const_i64(tcg_ctx, cur_addr);
+  gen_helper_afl_cmplog_64(tcg_ctx, tuc, tcur_addr, arg1, arg2, is_imm);
+
+}

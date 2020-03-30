@@ -37,7 +37,7 @@
    cur_loc has already been shifted in afl-unicorn-translate-inl.h at this point. 
    Also this helper will only be emitted if running instrumented. */
 
-void HELPER(afl_maybe_log)(void* uc_ptr, uint64_t cur_loc) {
+void HELPER(afl_maybe_log)(void* uc_ptr, uint64_t cur_loc, uint64_t real_loc) {
 
   struct uc_struct* uc = (struct uc_struct*) uc_ptr;
   u8* afl_area_ptr = uc->afl_area_ptr; // Don't remove, it's used by INC_AFL_AREA implicitly;
@@ -51,6 +51,11 @@ void HELPER(afl_maybe_log)(void* uc_ptr, uint64_t cur_loc) {
 #endif
 
   uc->afl_prev_loc = cur_loc >> 1;
+
+  if (uc->__afl_trace_record_counter < uc->__afl_trace_record_max){
+     uc->__afl_trace_record_counter++;
+     uc->__afl_trace_record_ptr[uc->__afl_trace_record_counter] = real_loc;
+  }
 
 }
 
@@ -119,5 +124,61 @@ void HELPER(afl_compcov_log_64)(void* uc_ptr, uint64_t cur_loc, uint64_t arg1,
 
   }
 
+}
+
+void HELPER(afl_cmplog_8)(void* uc_ptr, uint64_t cur_addr, uint32_t arg1,
+                           uint32_t arg2, uint32_t is_imm_loc_v) {
+  struct uc_struct* uc_ptr_t = (struct uc_struct*)uc_ptr;
+  if (uc_ptr_t->__afl_cmp_record_counter < uc_ptr_t->__afl_cmp_record_max){
+    uc_ptr_t->__afl_cmp_map[uc_ptr_t->__afl_cmp_record_counter].header.ins_type = 1;
+    uc_ptr_t->__afl_cmp_map[uc_ptr_t->__afl_cmp_record_counter].header.addr = (uint32_t) (cur_addr);
+    uc_ptr_t->__afl_cmp_map[uc_ptr_t->__afl_cmp_record_counter].header.is_IMM = is_imm_loc_v;
+    uc_ptr_t->__afl_cmp_map[uc_ptr_t->__afl_cmp_record_counter].header.shape = 1;
+    uc_ptr_t->__afl_cmp_map[uc_ptr_t->__afl_cmp_record_counter].log.v0 = arg1;
+    uc_ptr_t->__afl_cmp_map[uc_ptr_t->__afl_cmp_record_counter].log.v1 = arg2;
+    uc_ptr_t->__afl_cmp_record_counter++;
+  }
+}
+
+void HELPER(afl_cmplog_16)(void* uc_ptr, uint64_t cur_addr, uint32_t arg1,
+                           uint32_t arg2, uint32_t is_imm_loc_v) {
+  struct uc_struct* uc_ptr_t = (struct uc_struct*)uc_ptr;
+  if (uc_ptr_t->__afl_cmp_record_counter < uc_ptr_t->__afl_cmp_record_max){
+    uc_ptr_t->__afl_cmp_map[uc_ptr_t->__afl_cmp_record_counter].header.ins_type = 1;
+    uc_ptr_t->__afl_cmp_map[uc_ptr_t->__afl_cmp_record_counter].header.addr = (uint32_t) (cur_addr);
+    uc_ptr_t->__afl_cmp_map[uc_ptr_t->__afl_cmp_record_counter].header.is_IMM = is_imm_loc_v;
+    uc_ptr_t->__afl_cmp_map[uc_ptr_t->__afl_cmp_record_counter].header.shape = 2;
+    uc_ptr_t->__afl_cmp_map[uc_ptr_t->__afl_cmp_record_counter].log.v0 = arg1;
+    uc_ptr_t->__afl_cmp_map[uc_ptr_t->__afl_cmp_record_counter].log.v1 = arg2;
+    uc_ptr_t->__afl_cmp_record_counter++;
+  }
+}
+
+void HELPER(afl_cmplog_32)(void* uc_ptr, uint64_t cur_addr, uint32_t arg1,
+                           uint32_t arg2, uint32_t is_imm_loc_v) {
+  struct uc_struct* uc_ptr_t = (struct uc_struct*)uc_ptr;
+  if (uc_ptr_t->__afl_cmp_record_counter < uc_ptr_t->__afl_cmp_record_max){
+    uc_ptr_t->__afl_cmp_map[uc_ptr_t->__afl_cmp_record_counter].header.ins_type = 1;
+    uc_ptr_t->__afl_cmp_map[uc_ptr_t->__afl_cmp_record_counter].header.addr = (uint32_t) (cur_addr);
+    uc_ptr_t->__afl_cmp_map[uc_ptr_t->__afl_cmp_record_counter].header.is_IMM = is_imm_loc_v;
+    uc_ptr_t->__afl_cmp_map[uc_ptr_t->__afl_cmp_record_counter].header.shape = 4;
+    uc_ptr_t->__afl_cmp_map[uc_ptr_t->__afl_cmp_record_counter].log.v0 = arg1;
+    uc_ptr_t->__afl_cmp_map[uc_ptr_t->__afl_cmp_record_counter].log.v1 = arg2;
+    uc_ptr_t->__afl_cmp_record_counter++;
+  }
+}
+
+void HELPER(afl_cmplog_64)(void* uc_ptr, uint64_t cur_addr, uint64_t arg1,
+                           uint64_t arg2, uint32_t is_imm_loc_v) {
+  struct uc_struct* uc_ptr_t = (struct uc_struct*)uc_ptr;
+  if (uc_ptr_t->__afl_cmp_record_counter < uc_ptr_t->__afl_cmp_record_max){
+    uc_ptr_t->__afl_cmp_map[uc_ptr_t->__afl_cmp_record_counter].header.ins_type = 1;
+    uc_ptr_t->__afl_cmp_map[uc_ptr_t->__afl_cmp_record_counter].header.addr = (uint32_t) (cur_addr);
+    uc_ptr_t->__afl_cmp_map[uc_ptr_t->__afl_cmp_record_counter].header.is_IMM = is_imm_loc_v;
+    uc_ptr_t->__afl_cmp_map[uc_ptr_t->__afl_cmp_record_counter].header.shape = 8;
+    uc_ptr_t->__afl_cmp_map[uc_ptr_t->__afl_cmp_record_counter].log.v0 = arg1;
+    uc_ptr_t->__afl_cmp_map[uc_ptr_t->__afl_cmp_record_counter].log.v1 = arg2;
+    uc_ptr_t->__afl_cmp_record_counter++;
+  }
 }
 

@@ -370,6 +370,8 @@
 
 #define CMPLOG_SHM_ENV_VAR "__AFL_CMPLOG_SHM_ID"
 
+#define TRACELOG_SHM_ENV_VAR "__AFL_TLOG_SHM_ID"
+
 /* Uncomment this to use inferior block-coverage-based instrumentation. Note
    that you need to recompile the target binary for this to have any effect: */
 

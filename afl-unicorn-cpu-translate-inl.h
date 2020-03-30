@@ -39,17 +39,18 @@ static void afl_gen_maybe_log(TCGContext *s, uint64_t cur_loc) {
 
   if (!s->uc->afl_area_ptr) return;
 
+  uint64_t real_loc = cur_loc;
   /* "Hash" */
 
   cur_loc = (cur_loc >> 4) ^ (cur_loc << 8);
-  cur_loc &= MAP_SIZE - 7;
+  cur_loc &= s->uc->__MAP_SIZE - 7 ;//MAP_SIZE - 7;
 
   /* Implement probabilistic instrumentation by looking at scrambled block
      address. This keeps the instrumented locations stable across runs. */
 
   if (cur_loc >= s->uc->afl_inst_rms) return;
 
-    gen_afl_maybe_log(s, cur_loc);
+    gen_afl_maybe_log(s, cur_loc, real_loc);
 
 }
 
@@ -60,10 +61,22 @@ static void afl_gen_compcov(TCGContext *s, uint64_t cur_loc, TCGv arg1,
 
   if (!s->uc->afl_compcov_level || !s->uc->afl_area_ptr) return;
 
+  if (s->uc->__afl_cmp_map) {
+    //TCGv_i32 ins_type_loc_v = tcg_const_i32(s, 1);//*1-cmp,2-sub,3-xor*/
+    TCGv_i32 is_imm_loc_v = tcg_const_i32(s, is_imm);
+    switch (ot) {
+      case MO_64: gen_afl_cmplog_64(s, cur_loc, (TCGv_i64)arg1, (TCGv_i64)arg2, is_imm_loc_v); break;
+      case MO_32: gen_afl_cmplog_32(s, cur_loc, (TCGv_i32)arg1, (TCGv_i32)arg2, is_imm_loc_v); break;
+      case MO_16: gen_afl_cmplog_16(s, cur_loc, (TCGv_i32)arg1, (TCGv_i32)arg2, is_imm_loc_v); break;
+      case MO_8:  gen_afl_cmplog_8 (s, cur_loc, (TCGv_i32)arg1, (TCGv_i32)arg2, is_imm_loc_v); break;
+      default: break;
+    }
+  }
+
   if (!is_imm && s->uc->afl_compcov_level < 2) return;
 
   cur_loc = (cur_loc >> 4) ^ (cur_loc << 8);
-  cur_loc &= MAP_SIZE - 7;
+  cur_loc &= s->uc->__MAP_SIZE - 7 ;//MAP_SIZE - 7;
 
   if (cur_loc >= s->uc->afl_inst_rms) return;
 

@@ -105,6 +105,23 @@ static void afl_setup(struct uc_struct* uc) {
 
   int shm_id;
 
+  if (id_str) {
+
+    shm_id = atoi(id_str);
+    uc->afl_area_ptr = shmat(shm_id, NULL, 0);
+    uint64_t tmp_map_size = ((uint64_t *)uc->afl_area_ptr)[0];
+    if(tmp_map_size >= MAP_SIZE){
+        uc->__MAP_SIZE = tmp_map_size;
+    }else{
+        uc->__MAP_SIZE = MAP_SIZE;
+    }
+    uc->afl_prev_loc = 0;
+    uc->afl_area_ptr[0] = 1;
+
+    if (uc->afl_area_ptr == (void*)-1) exit(1);
+    
+  }
+
   if (inst_r) {
 
     unsigned int r;
@@ -114,23 +131,32 @@ static void afl_setup(struct uc_struct* uc) {
     if (r > 100) r = 100;
     if (!r) r = 1;
 
-    uc->afl_inst_rms = MAP_SIZE * r / 100;
+    uc->afl_inst_rms = uc->__MAP_SIZE * r / 100;
 
   } else {
 
-    uc->afl_inst_rms = MAP_SIZE;
+    uc->afl_inst_rms = uc->__MAP_SIZE;
 
   }
 
+  id_str = getenv(TRACELOG_SHM_ENV_VAR);
+
   if (id_str) {
+    int shm_id = atoi(id_str);
+    uc->__afl_trace_record_ptr = shmat(shm_id, NULL, 0);
 
-    shm_id = atoi(id_str);
-    uc->afl_area_ptr = shmat(shm_id, NULL, 0);
-    uc->afl_prev_loc = 0;
-    uc->afl_area_ptr[0] = 1;
+    if (uc->__afl_trace_record_ptr == (void *)-1) exit(1);
+    uc->__afl_trace_record_max = uc->__afl_trace_record_ptr[0];
+  }
 
-    if (uc->afl_area_ptr == (void*)-1) exit(1);
-    
+  id_str = getenv(CMPLOG_SHM_ENV_VAR);
+
+  if (id_str) {
+    int shm_id = atoi(id_str);
+    uc->__afl_cmp_map = shmat(shm_id, NULL, 0);
+
+    if (uc->__afl_cmp_map == (void *)-1) exit(1);
+    uc->__afl_cmp_record_max = ((uint64_t *)uc->__afl_cmp_map)[0];
   }
 
   /* Maintain for compatibility */
@@ -248,17 +274,17 @@ static inline uc_afl_ret afl_forkserver(CPUArchState* env) {
         close(_W(env->uc->afl_parent_pipe));
         env->uc->afl_child_request_next = afl_request_next;
 
-        memset(env->uc->afl_area_ptr, 0, MAP_SIZE);
+        memset(env->uc->afl_area_ptr, 0xff, env->uc->__MAP_SIZE);
         MEM_BARRIER(); // Make very sure everything has been written to the map at this point
 
         if (!first_round) {
 
           // For persistent mode: Clear the map manually after forks.
-          memset(env->uc->afl_area_ptr, 0, MAP_SIZE);
+          memset(env->uc->afl_area_ptr, 0xff, env->uc->__MAP_SIZE);
 
         } else {
           // For persistent mode: Clear the map manually after forks.
-          //memset(env->uc->afl_area_ptr, 0, MAP_SIZE);
+          //memset(env->uc->afl_area_ptr, 0, env->uc->__MAP_SIZE);
 
           first_round = false;
         }
@@ -266,6 +292,8 @@ static inline uc_afl_ret afl_forkserver(CPUArchState* env) {
         env->uc->afl_prev_loc = 0;
         // Tell AFL we're alive
         env->uc->afl_area_ptr[0] = 1;
+
+        env->uc->__afl_trace_record_counter = 0;
 
         return UC_AFL_RET_CHILD;
 
@@ -399,12 +427,14 @@ static uc_afl_ret afl_request_next(struct uc_struct* uc, bool crash_found) {
 
   }
 
-  memset(uc->afl_area_ptr, 0, MAP_SIZE);
+  memset(uc->afl_area_ptr, 0xff, uc->__MAP_SIZE);
   MEM_BARRIER(); // Also make sure nothing read before this point.
 
   // Start with a clean slate.
   uc->afl_prev_loc = 0;
   uc->afl_area_ptr[0] = 1;
+
+  uc->__afl_trace_record_counter = 0;
 
   return UC_AFL_RET_CHILD;
 

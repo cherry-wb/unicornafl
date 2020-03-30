@@ -2,7 +2,6 @@
 #define UNICORN_COMMON_H_
 
 #include "tcg.h"
-
 // This header define common patterns/codes that will be included in all arch-sepcific
 // codes for unicorns purposes.
 
@@ -95,6 +94,15 @@ static inline void uc_common_init(struct uc_struct* uc)
     uc->afl_parent_pipe[0] = 0;
     uc->afl_parent_pipe[1] = 0;
     uc->afl_child_request_next = NULL;  // This callback is only set if inside child.
+
+    uc->__MAP_SIZE = 65536;
+    uc->__afl_trace_record_ptr = 0;
+    uc->__afl_trace_record_counter = 0;
+    uc->__afl_trace_record_max = 0;
+
+    uc->__afl_cmp_map = 0;
+    uc->__afl_cmp_record_counter = 0;
+    uc->__afl_cmp_record_max = 0;
 #endif
 }
 
